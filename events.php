@@ -105,6 +105,21 @@ function vm_events(){
     $content = '<ul>';
     if($query->have_posts()):
 		while($query->have_posts()): $query->the_post();
+
+
+            // trash event if old
+            $exp_date = get_post_meta(get_the_ID(), '_event_date', true);
+            // set the correct timezone
+            date_default_timezone_set('America/New_York');
+            $today = new DateTime();
+            if($exp_date < $today->format('Y-m-d h:i:sa')){
+                // Update post
+                $current_post = get_post( get_the_ID(), 'ARRAY_A' );
+                $current_post['post_status'] = 'trash';
+                wp_update_post($current_post);
+            }
+
+
             // display event
             $content .= '<li><a href="'.get_the_permalink().'">'. get_the_title() .'</a> - '.date_format(date_create(get_post_meta($post->ID, '_event_date', true)), 'jS F').'</li>'; 
         endwhile;
@@ -115,3 +130,15 @@ function vm_events(){
 
     return $content;
 }
+
+/* Assign custom template to event post type*/
+function load_event_template( $template ) {
+    global $post;
+    if ( 'event' === $post->post_type && locate_template( array( 'single-event.php' ) ) !== $template ) {
+        return plugin_dir_path( __FILE__ ) . 'single-event.php';
+    }
+
+    return $template;
+}
+
+add_filter( 'single_template', 'load_event_template' );
